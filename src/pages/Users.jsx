@@ -29,8 +29,8 @@ import {
 const data = [
   {
     id: 1,
-    username: "john_doe",
-    phone: "123-456-7890",
+    username: "Abela",
+    phone: "0912345678",
     isActive: true,
     avatar: "https://i.pravatar.cc/150?img=1",
     joinDate: "2024-01-15",
@@ -45,8 +45,8 @@ const data = [
   },
   {
     id: 2,
-    username: "jane_smith",
-    phone: "234-567-8901",
+    username: "Nahom",
+    phone: "0956483273",
     isActive: false,
     avatar: "https://i.pravatar.cc/150?img=2",
     joinDate: "2024-02-01",
@@ -61,8 +61,8 @@ const data = [
   },
   {
     id: 3,
-    username: "alice_wonder",
-    phone: "345-678-9012",
+    username: "Kidus",
+    phone: "098745272",
     isActive: true,
     avatar: "https://i.pravatar.cc/150?img=3",
     joinDate: "2024-01-20",
@@ -77,8 +77,8 @@ const data = [
   },
   {
     id: 4,
-    username: "bob_builder",
-    phone: "456-789-0123",
+    username: "Bereket",
+    phone: "0988462678",
     isActive: false,
     avatar: "https://i.pravatar.cc/150?img=4",
     joinDate: "2024-02-15",
@@ -93,8 +93,8 @@ const data = [
   },
   {
     id: 5,
-    username: "charlie_brown",
-    phone: "567-890-1234",
+    username: "sami",
+    phone: "098531873",
     isActive: true,
     avatar: "https://i.pravatar.cc/150?img=5",
     joinDate: "2024-01-10",
