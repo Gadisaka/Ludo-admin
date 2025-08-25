@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   MdDashboard,
   MdSportsEsports,
@@ -17,7 +17,7 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
-
+  const navigate = useNavigate();
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 768) {
@@ -41,6 +41,8 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     // Add your logout logic here
+    localStorage.removeItem("token");
+    navigate("/auth");
     console.log("Logging out...");
   };
 
