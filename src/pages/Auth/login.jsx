@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../../../constants";
 
 const Login = ({ setIsAuthenticated }) => {
   const [formData, setFormData] = useState({
@@ -25,14 +26,11 @@ const Login = ({ setIsAuthenticated }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "https://ludo-serverside.onrender.com/auth/login",
-        {
-          phone: formData.phone,
-          password: formData.password,
-          role: "ADMIN",
-        }
-      );
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        phone: formData.phone,
+        password: formData.password,
+        role: "ADMIN",
+      });
 
       localStorage.setItem("token", response.data.token);
       setIsAuthenticated(true);

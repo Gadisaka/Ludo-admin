@@ -10,6 +10,7 @@ import {
   MdChevronLeft,
   MdLogout,
   MdAccountCircle,
+  MdSettings,
 } from "react-icons/md";
 
 const Sidebar = () => {
@@ -34,7 +35,8 @@ const Sidebar = () => {
     { path: "/games", icon: <MdSportsEsports />, label: "Games" },
     { path: "/transactions", icon: <MdPayment />, label: "Transactions" },
     { path: "/users", icon: <MdPeople />, label: "Users" },
-    { path: "/profile", icon: <MdPerson />, label: "Profile" },
+    { path: "/bots", icon: <MdPerson />, label: "Bots" },
+    // { path: "/settings", icon: <MdSettings />, label: "Settings" },
   ];
 
   const handleLogout = () => {
@@ -55,7 +57,7 @@ const Sidebar = () => {
             isCollapsed ? "text-2xl" : "text-4xl"
           }`}
         >
-          {isCollapsed ? "E" : "EthioLudo"}
+          {isCollapsed ? "L" : "Ludo"}
         </h1>
       </div>
 

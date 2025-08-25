@@ -10,10 +10,12 @@ import { useState, useEffect } from "react";
 import Home from "./pages/Home";
 import Games from "./pages/Games";
 import Transactions from "./pages/Transactions";
-import Profile from "./pages/Profile";
 import Sidebar from "./components/Sidebar";
 import Users from "./pages/Users";
+import UserDetail from "./pages/UserDetail";
 import Login from "./pages/Auth/login";
+import Bots from "./pages/Bots";
+import GameSettings from "./pages/GameSettings";
 
 function AppContent() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -89,10 +91,18 @@ function AppContent() {
             }
           />
           <Route
-            path="/profile"
+            path="/bots"
             element={
               <ProtectedRoute>
-                <Profile />
+                <Bots />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <GameSettings />
               </ProtectedRoute>
             }
           />
@@ -101,6 +111,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Users />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users/:userId"
+            element={
+              <ProtectedRoute>
+                <UserDetail />
               </ProtectedRoute>
             }
           />
