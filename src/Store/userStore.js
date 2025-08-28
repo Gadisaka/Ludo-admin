@@ -5,7 +5,7 @@ const API_BASE_URL = API_URL;
 
 // Helper function to get auth token
 const getAuthToken = () => {
-  return localStorage.getItem("token");
+  return localStorage.getItem("adminToken");
 };
 
 // Helper function to create headers with auth token

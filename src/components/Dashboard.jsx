@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Gamepad2,
@@ -15,6 +15,8 @@ import {
   Square,
   Eye,
   MoreVertical,
+  Send,
+  Bell,
 } from "lucide-react";
 import {
   LineChart,
@@ -38,6 +40,7 @@ import {
   useGameStore,
   useTransactionStore,
 } from "../Store";
+import { API_URL } from "../../constants";
 
 // Enhanced Stat Card Component
 const StatCard = ({
@@ -265,6 +268,16 @@ const ActiveGameCard = ({ game, onPause, onResume, onEnd }) => {
 
 // Main Dashboard Component
 const Dashboard = () => {
+  // Local state for cut percentage
+  const [cutPercentage, setCutPercentage] = useState(10);
+  const [editingCut, setEditingCut] = useState(false);
+  const [cutLoading, setCutLoading] = useState(false);
+
+  // Notification state
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationType, setNotificationType] = useState("INFO");
+  const [sendingNotification, setSendingNotification] = useState(false);
+
   // Zustand stores
   const {
     dashboardStats,
@@ -280,17 +293,17 @@ const Dashboard = () => {
   const { errors: userErrors, initializeUserManagement } = useUserStore();
 
   const {
-    games,
+    // games,in
     loading: gameLoading,
     errors: gameErrors,
-    updateGameStatus,
+    // updateGameStatus,
     fetchGames,
     getGameStats,
   } = useGameStore();
 
   // Get current game stats
   const gameStats = getGameStats();
-  const activeGames = games.filter((game) => game.status === "playing");
+  // const activeGames = games.filter((game) => game.status === "playing");
 
   const {
     transactions,
@@ -308,7 +321,117 @@ const Dashboard = () => {
   // Local state
   // const [timeRange, setTimeRange] = useState("week");
   // const [anchorEl, setAnchorEl] = useState(null);
-  const [refreshInterval, setRefreshInterval] = useState(null);
+
+  // Fetch current cut percentage
+  const fetchCutPercentage = useCallback(async () => {
+    try {
+      setCutLoading(true);
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch(
+        `${API_URL}/admin/settings/GAME_CUT_PERCENTAGE`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setCutPercentage(data.data.settingValue);
+      }
+    } catch (error) {
+      console.error("Error fetching cut percentage:", error);
+    } finally {
+      setCutLoading(false);
+    }
+  }, []);
+
+  // Update cut percentage
+  const updateCutPercentage = async (newValue) => {
+    try {
+      setCutLoading(true);
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch(
+        `${API_URL}/admin/settings/GAME_CUT_PERCENTAGE`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            value: parseFloat(newValue),
+            description: "Percentage cut taken from game winnings",
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setCutPercentage(data.data.settingValue);
+        setEditingCut(false);
+        alert("Cut percentage updated successfully!");
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating cut percentage:", error);
+      alert("Failed to update cut percentage");
+    } finally {
+      setCutLoading(false);
+    }
+  };
+
+  // Handle cut percentage form submission
+  const handleCutPercentageSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const newValue = formData.get("cutPercentage");
+
+    if (newValue >= 0 && newValue <= 100) {
+      updateCutPercentage(newValue);
+    } else {
+      alert("Cut percentage must be between 0 and 100");
+    }
+  };
+
+  // Send notification to all users
+  const sendNotificationToAllUsers = async () => {
+    if (!notificationMessage.trim()) {
+      alert("Please enter a notification message");
+      return;
+    }
+
+    try {
+      setSendingNotification(true);
+      const response = await fetch(`${API_URL}/admin/send-notification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: notificationMessage.trim(),
+          type: notificationType,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Notification sent successfully to ${data.userCount} users!`);
+        setNotificationMessage("");
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      alert("Failed to send notification");
+    } finally {
+      setSendingNotification(false);
+    }
+  };
 
   // Initialize dashboard data
   useEffect(() => {
@@ -319,6 +442,7 @@ const Dashboard = () => {
           initializeUserManagement(),
           fetchGames(),
           fetchTransactions(),
+          fetchCutPercentage(),
         ]);
       } catch (error) {
         console.error("Failed to initialize dashboard:", error);
@@ -331,12 +455,17 @@ const Dashboard = () => {
     const interval = setInterval(() => {
       initializeDashboard();
     }, 30000);
-    setRefreshInterval(interval);
 
     return () => {
-      if (refreshInterval) clearInterval(refreshInterval);
+      clearInterval(interval);
     };
-  }, []);
+  }, [
+    initializeDashboard,
+    initializeUserManagement,
+    fetchGames,
+    fetchTransactions,
+    fetchCutPercentage,
+  ]);
 
   // Handle time range change
   // const handleTimeRangeChange = (newRange) => {
@@ -344,31 +473,6 @@ const Dashboard = () => {
   //   setFilters({ dateRange: newRange });
   //   setAnchorEl(null);
   // };
-
-  // Handle game actions
-  const handlePauseGame = async (gameId) => {
-    try {
-      await updateGameStatus(gameId, "paused");
-    } catch (error) {
-      console.error("Failed to pause game:", error);
-    }
-  };
-
-  const handleResumeGame = async (gameId) => {
-    try {
-      await updateGameStatus(gameId, "playing");
-    } catch (error) {
-      console.error("Failed to resume game:", error);
-    }
-  };
-
-  const handleEndGame = async (gameId) => {
-    try {
-      await updateGameStatus(gameId, "finished");
-    } catch (error) {
-      console.error("Failed to end game:", error);
-    }
-  };
 
   // Handle transaction actions
   const handleApproveTransaction = async (transactionId) => {
@@ -428,6 +532,113 @@ const Dashboard = () => {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* Cut Percentage Control */}
+              <div className="rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-700">
+                      Cut %:
+                    </span>
+                    {editingCut ? (
+                      <form
+                        onSubmit={handleCutPercentageSubmit}
+                        className="flex items-center gap-2"
+                      >
+                        <input
+                          type="number"
+                          name="cutPercentage"
+                          defaultValue={cutPercentage}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          className="w-16 rounded border border-gray-300 px-2 py-1 text-sm"
+                          disabled={cutLoading}
+                          autoFocus
+                        />
+                        <button
+                          type="submit"
+                          disabled={cutLoading}
+                          className="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600 disabled:opacity-50"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCut(false)}
+                          disabled={cutLoading}
+                          className="rounded bg-gray-500 px-2 py-1 text-xs text-white hover:bg-gray-600 disabled:opacity-50"
+                        >
+                          ✕
+                        </button>
+                      </form>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-green-600">
+                          {cutLoading ? "..." : `${cutPercentage}%`}
+                        </span>
+                        <button
+                          onClick={() => setEditingCut(true)}
+                          disabled={cutLoading}
+                          className="rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600 disabled:opacity-50"
+                          title="Edit cut percentage"
+                        >
+                          ✏️
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Send Notification to All Users */}
+              <div className="rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <Bell className="h-5 w-5 text-blue-600" />
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={notificationType}
+                      onChange={(e) => setNotificationType(e.target.value)}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+                      disabled={sendingNotification}
+                    >
+                      <option value="INFO">Info</option>
+                      <option value="SUCCESS">Success</option>
+                      <option value="WARNING">Warning</option>
+                      <option value="ERROR">Error</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Send notification to all users..."
+                      value={notificationMessage}
+                      onChange={(e) => setNotificationMessage(e.target.value)}
+                      className="w-64 rounded border border-gray-300 px-3 py-1 text-sm focus:border-blue-500 focus:outline-none"
+                      disabled={sendingNotification}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter" && !sendingNotification) {
+                          sendNotificationToAllUsers();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={sendNotificationToAllUsers}
+                      disabled={
+                        sendingNotification || !notificationMessage.trim()
+                      }
+                      className="flex items-center gap-1 rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                      title="Send notification to all users"
+                    >
+                      {sendingNotification ? (
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      ) : (
+                        <Send className="h-3 w-3" />
+                      )}
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <button
                 onClick={() => initializeDashboard()}
                 disabled={adminLoading.dashboard}
@@ -509,8 +720,6 @@ const Dashboard = () => {
               value={dashboardStats.totalUsers?.toLocaleString() || "0"}
               icon={<Users className="h-7 w-7" />}
               color="#667eea"
-              trend="up"
-              trendValue="+12% from last month"
               loading={adminLoading.dashboard}
             />
 
@@ -519,8 +728,6 @@ const Dashboard = () => {
               value={gameStats.activeGames || "0"}
               icon={<Gamepad2 className="h-7 w-7" />}
               color="#764ba2"
-              trend="up"
-              trendValue="+8% from last week"
               loading={gameLoading.games}
             />
 
@@ -529,19 +736,15 @@ const Dashboard = () => {
               value={formatCurrency(dashboardStats.totalRevenue || 0)}
               icon={<DollarSign className="h-7 w-7" />}
               color="#f093fb"
-              trend="up"
-              trendValue="+15.3% from last month"
               loading={adminLoading.dashboard}
             />
 
             <StatCard
-              title="Online Users"
-              value={realTimeData.onlineUsers || "0"}
-              icon={<TrendingUp className="h-7 w-7" />}
+              title="Total Games"
+              value={dashboardStats.totalGames?.toLocaleString() || "0"}
+              icon={<Gamepad2 className="h-7 w-7" />}
               color="#4facfe"
-              trend="up"
-              trendValue="+5% from last hour"
-              loading={adminLoading.realTime}
+              loading={adminLoading.dashboard}
             />
           </div>
         </div>
@@ -691,45 +894,6 @@ const Dashboard = () => {
           {/* Game Management and Transaction Sections */}
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Active Games */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg transition-all hover:shadow-xl">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Active Games
-                </h3>
-                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
-                  {activeGames.length} Active
-                </span>
-              </div>
-
-              {gameLoading.games ? (
-                <div className="space-y-4">
-                  {[1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="h-24 animate-pulse rounded-lg bg-gray-200"
-                    />
-                  ))}
-                </div>
-              ) : activeGames.length > 0 ? (
-                activeGames.map((game) => (
-                  <ActiveGameCard
-                    key={game.id}
-                    game={{
-                      ...game,
-                      gameType: game.gameType || "classic",
-                      status: game.status || "playing",
-                    }}
-                    onPause={handlePauseGame}
-                    onResume={handleResumeGame}
-                    onEnd={handleEndGame}
-                  />
-                ))
-              ) : (
-                <div className="py-8 text-center">
-                  <p className="text-gray-600">No active games at the moment</p>
-                </div>
-              )}
-            </div>
 
             {/* Pending Transactions */}
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg transition-all hover:shadow-xl">
@@ -816,64 +980,6 @@ const Dashboard = () => {
 
           {/* Performance Metrics */}
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg transition-all hover:shadow-xl">
-              <h3 className="mb-6 text-xl font-semibold text-gray-900">
-                Platform Performance
-              </h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="mb-2 flex justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      User Engagement
-                    </span>
-                    <span className="text-sm font-semibold text-blue-600">
-                      85%
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-gray-200">
-                    <div
-                      className="h-2 rounded-full bg-blue-500"
-                      style={{ width: "85%" }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 flex justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      Game Completion Rate
-                    </span>
-                    <span className="text-sm font-semibold text-blue-600">
-                      92%
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-gray-200">
-                    <div
-                      className="h-2 rounded-full bg-blue-500"
-                      style={{ width: "92%" }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 flex justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      Player Retention
-                    </span>
-                    <span className="text-sm font-semibold text-blue-600">
-                      78%
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-gray-200">
-                    <div
-                      className="h-2 rounded-full bg-blue-500"
-                      style={{ width: "78%" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Game Distribution */}
             <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-lg transition-all hover:shadow-xl">
               <h3

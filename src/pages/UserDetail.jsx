@@ -13,6 +13,7 @@ import {
   Edit3,
   Save,
   X,
+  Trash2,
 } from "lucide-react";
 import { useUserStore } from "../Store";
 import { API_URL } from "../../constants";
@@ -27,6 +28,8 @@ const UserDetail = () => {
   const [editStatus, setEditStatus] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Get data from user store
   const { users, fetchUsers } = useUserStore();
@@ -47,16 +50,10 @@ const UserDetail = () => {
         }
 
         // If not in store, fetch from API
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No authentication token found. Please log in.");
-        }
-
         const response = await fetch(`${API_URL}/admin/users`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
         });
         if (!response.ok) {
@@ -90,16 +87,10 @@ const UserDetail = () => {
     try {
       setSaving(true);
 
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found. Please log in.");
-      }
-
       const response = await fetch(`${API_URL}/admin/users/${userId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ isActive: editStatus }),
       });
@@ -132,6 +123,33 @@ const UserDetail = () => {
     setEditStatus(user.isActive);
     setHasChanges(false);
     setIsEditing(false);
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      setDeleting(true);
+
+      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Refresh users list and navigate back
+      fetchUsers();
+      navigate("/users");
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      setError("Failed to delete user");
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   if (loading) {
@@ -179,13 +197,24 @@ const UserDetail = () => {
           <h1 className="text-3xl font-bold text-gray-900">Player Details</h1>
         </div>
 
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <Edit3 className="w-4 h-4 mr-2 inline" />
-          {isEditing ? "Cancel Edit" : "Edit User"}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <Edit3 className="w-4 h-4 mr-2 inline" />
+            {isEditing ? "Cancel Edit" : "Edit User"}
+          </button>
+
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deleting}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4 mr-2 inline" />
+            Delete User
+          </button>
+        </div>
       </div>
 
       {/* Profile Section */}
@@ -439,6 +468,64 @@ const UserDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Delete User
+                </h3>
+                <p className="text-sm text-gray-500">
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-700">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold">{user.username}</span>? This
+                will permanently remove their account, game history, and all
+                associated data.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleDeleteUser}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    Delete User
+                  </div>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
