@@ -11,6 +11,7 @@ import {
   MdLogout,
   MdAccountCircle,
   MdSettings,
+  MdImage,
 } from "react-icons/md";
 
 const Sidebar = () => {
@@ -36,6 +37,7 @@ const Sidebar = () => {
     { path: "/transactions", icon: <MdPayment />, label: "Transactions" },
     { path: "/users", icon: <MdPeople />, label: "Users" },
     { path: "/bots", icon: <MdPerson />, label: "Bots" },
+    { path: "/ads", icon: <MdImage />, label: "Ads & Social" },
     // { path: "/settings", icon: <MdSettings />, label: "Settings" },
   ];
 

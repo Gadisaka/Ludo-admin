@@ -16,6 +16,7 @@ import UserDetail from "./pages/UserDetail";
 import Login from "./pages/Auth/login";
 import Bots from "./pages/Bots";
 import GameSettings from "./pages/GameSettings";
+import Ads from "./pages/Ads";
 
 function AppContent() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -119,6 +120,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <UserDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ads"
+            element={
+              <ProtectedRoute>
+                <Ads />
               </ProtectedRoute>
             }
           />

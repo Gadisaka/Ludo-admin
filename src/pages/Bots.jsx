@@ -10,8 +10,11 @@ import {
   Search,
   Filter,
   RefreshCw,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import { API_URL } from "../../constants";
+import { useBotSettingsStore } from "../Store";
 
 const Bots = () => {
   const [botGames, setBotGames] = useState([]);
@@ -27,9 +30,20 @@ const Bots = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Bot settings store
+  const {
+    botsEnabled,
+    loading: botSettingsLoading,
+    saving: botSettingsSaving,
+    error: botSettingsError,
+    fetchBotSettings,
+    toggleBotsEnabled,
+  } = useBotSettingsStore();
+
   useEffect(() => {
     fetchBotGames();
-  }, []);
+    fetchBotSettings();
+  }, [fetchBotSettings]);
 
   const fetchBotGames = async () => {
     try {
@@ -245,13 +259,79 @@ const Bots = () => {
           </div>
         </div>
 
-        <button
-          onClick={fetchBotGames}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <RefreshCw className="w-4 h-4 mr-2 inline" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchBotGames}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <RefreshCw className="w-4 h-4 mr-2 inline" />
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Bot Control Toggle */}
+      <div className="mb-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-lg ${
+                botsEnabled ? "bg-green-100" : "bg-red-100"
+              }`}
+            >
+              {botsEnabled ? (
+                <Power className="w-6 h-6 text-green-600" />
+              ) : (
+                <PowerOff className="w-6 h-6 text-red-600" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Bot Control
+              </h3>
+              <p className="text-sm text-gray-600">
+                {botsEnabled
+                  ? "Bots are currently enabled and can join games"
+                  : "Bots are currently disabled and cannot join games"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center">
+              <span
+                className={`text-sm font-medium mr-3 ${
+                  botsEnabled ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {botsEnabled ? "Enabled" : "Disabled"}
+              </span>
+              <button
+                onClick={toggleBotsEnabled}
+                disabled={botSettingsSaving || botSettingsLoading}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  botsEnabled ? "bg-green-600" : "bg-gray-200"
+                } ${
+                  botSettingsSaving || botSettingsLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "cursor-pointer"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    botsEnabled ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {botSettingsError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-800">{botSettingsError}</p>
+          </div>
+        )}
       </div>
 
       {/* Comprehensive Analysis Cards */}
