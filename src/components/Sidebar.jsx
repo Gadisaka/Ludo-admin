@@ -11,6 +11,8 @@ import {
   MdLogout,
   MdAccountCircle,
   MdSettings,
+  MdImage,
+  MdPendingActions,
 } from "react-icons/md";
 
 const Sidebar = () => {
@@ -34,8 +36,14 @@ const Sidebar = () => {
     { path: "/", icon: <MdDashboard />, label: "Dashboard" },
     { path: "/games", icon: <MdSportsEsports />, label: "Games" },
     { path: "/transactions", icon: <MdPayment />, label: "Transactions" },
+    {
+      path: "/pending-withdrawals",
+      icon: <MdPendingActions />,
+      label: "Pending Withdrawals",
+    },
     { path: "/users", icon: <MdPeople />, label: "Users" },
     { path: "/bots", icon: <MdPerson />, label: "Bots" },
+    { path: "/ads", icon: <MdImage />, label: "Ads & Social" },
     // { path: "/settings", icon: <MdSettings />, label: "Settings" },
   ];
 

@@ -298,18 +298,18 @@ const Dashboard = () => {
     errors: gameErrors,
     // updateGameStatus,
     fetchGames,
-    getGameStats,
+    // getGameStats,
   } = useGameStore();
 
   // Get current game stats
-  const gameStats = getGameStats();
+  // const gameStats = getGameStats();
   // const activeGames = games.filter((game) => game.status === "playing");
 
   const {
     transactions,
     loading: transactionLoading,
     errors: transactionErrors,
-    updateTransactionStatus,
+    // updateTransactionStatus,
     fetchTransactions,
   } = useTransactionStore();
 
@@ -326,7 +326,7 @@ const Dashboard = () => {
   const fetchCutPercentage = useCallback(async () => {
     try {
       setCutLoading(true);
-      const token = localStorage.getItem("adminToken");
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${API_URL}/admin/settings/GAME_CUT_PERCENTAGE`,
         {
@@ -351,7 +351,7 @@ const Dashboard = () => {
   const updateCutPercentage = async (newValue) => {
     try {
       setCutLoading(true);
-      const token = localStorage.getItem("adminToken");
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${API_URL}/admin/settings/GAME_CUT_PERCENTAGE`,
         {
@@ -475,21 +475,21 @@ const Dashboard = () => {
   // };
 
   // Handle transaction actions
-  const handleApproveTransaction = async (transactionId) => {
-    try {
-      await updateTransactionStatus(transactionId, "completed");
-    } catch (error) {
-      console.error("Failed to approve transaction:", error);
-    }
-  };
+  // const handleApproveTransaction = async (transactionId) => {
+  //   try {
+  //     await updateTransactionStatus(transactionId, "completed");
+  //   } catch (error) {
+  //     console.error("Failed to approve transaction:", error);
+  //   }
+  // };
 
-  const handleRejectTransaction = async (transactionId) => {
-    try {
-      await updateTransactionStatus(transactionId, "rejected");
-    } catch (error) {
-      console.error("Failed to reject transaction:", error);
-    }
-  };
+  // const handleRejectTransaction = async (transactionId) => {
+  //   try {
+  //     await updateTransactionStatus(transactionId, "rejected");
+  //   } catch (error) {
+  //     console.error("Failed to reject transaction:", error);
+  //   }
+  // };
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -647,43 +647,6 @@ const Dashboard = () => {
                 <RefreshCw className="h-5 w-5" />
                 Refresh
               </button>
-
-              {/* <div className="relative">
-                <button
-                  onClick={() => setAnchorEl(!anchorEl)}
-                  className="flex items-center gap-2 rounded-xl border border-blue-300 px-6 py-3 font-semibold text-blue-600 transition-all hover:border-blue-500 hover:bg-blue-50"
-                >
-                  <Calendar className="h-5 w-5" />
-                  {timeRange === "week"
-                    ? "This Week"
-                    : timeRange === "month"
-                    ? "This Month"
-                    : "This Year"}
-                </button>
-
-                {anchorEl && (
-                  <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-xl">
-                    <button
-                      onClick={() => handleTimeRangeChange("week")}
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      This Week
-                    </button>
-                    <button
-                      onClick={() => handleTimeRangeChange("month")}
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      This Month
-                    </button>
-                    <button
-                      onClick={() => handleTimeRangeChange("year")}
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      This Year
-                    </button>
-                  </div>
-                )}
-              </div> */}
             </div>
           </div>
         </div>
@@ -714,7 +677,7 @@ const Dashboard = () => {
           <h2 className="mb-6 text-center text-3xl font-bold text-gray-900 sm:text-left">
             Platform Overview
           </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
               title="Total Users"
               value={dashboardStats.totalUsers?.toLocaleString() || "0"}
@@ -722,20 +685,20 @@ const Dashboard = () => {
               color="#667eea"
               loading={adminLoading.dashboard}
             />
-
+            {/* 
             <StatCard
               title="Active Games"
               value={gameStats.activeGames || "0"}
               icon={<Gamepad2 className="h-7 w-7" />}
               color="#764ba2"
               loading={gameLoading.games}
-            />
+            /> */}
 
             <StatCard
-              title="Total Revenue"
-              value={formatCurrency(dashboardStats.totalRevenue || 0)}
+              title="Revenue"
+              value={formatCurrency(dashboardStats.platformCutRevenue || 0)}
               icon={<DollarSign className="h-7 w-7" />}
-              color="#f093fb"
+              color="#8b5cf6"
               loading={adminLoading.dashboard}
             />
 
@@ -746,6 +709,150 @@ const Dashboard = () => {
               color="#4facfe"
               loading={adminLoading.dashboard}
             />
+          </div>
+
+          {/* Revenue Breakdown */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard
+              title="Total Deposits"
+              value={formatCurrency(dashboardStats.totalDeposits || 0)}
+              icon={<TrendingUp className="h-7 w-7" />}
+              color="#10b981"
+              loading={adminLoading.dashboard}
+            />
+
+            <StatCard
+              title="Total Withdrawals"
+              value={formatCurrency(dashboardStats.totalWithdrawals || 0)}
+              icon={<TrendingUp className="h-7 w-7" />}
+              color="#ef4444"
+              loading={adminLoading.dashboard}
+            />
+
+            <StatCard
+              title="Pending Withdrawals"
+              value={formatCurrency(dashboardStats.pendingWithdrawals || 0)}
+              icon={<DollarSign className="h-7 w-7" />}
+              color="#f59e0b"
+              loading={adminLoading.dashboard}
+            />
+          </div>
+        </div>
+
+        {/* Game Management and Transaction Sections */}
+        <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-2">
+          {/* Active Games */}
+
+          {/* Pending Transactions */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg transition-all hover:shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Pending Withdrawals
+              </h3>
+              <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">
+                {pendingTransactions.length} Pending
+              </span>
+            </div>
+
+            {transactionLoading.transactions ? (
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-20 animate-pulse rounded-lg bg-gray-200"
+                  />
+                ))}
+              </div>
+            ) : pendingTransactions.length > 0 ? (
+              <div className="space-y-4">
+                {pendingTransactions.map((transaction, index) => (
+                  <div
+                    key={transaction._id || transaction.id || index}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500 text-white">
+                          <DollarSign className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {typeof transaction.user === "object"
+                              ? transaction.user?.username ||
+                                transaction.user?.email ||
+                                "Unknown User"
+                              : transaction.user}{" "}
+                            - {transaction.type}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {transaction.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-yellow-600">
+                          {transaction.amount}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {transaction.time}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-gray-600">No pending transactions</p>
+              </div>
+            )}
+          </div>
+          {/* Real-time Activities */}
+          <div>
+            <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-lg transition-all hover:shadow-xl">
+              <h3
+                className="mb-6 text-xl font-bold"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Recent Activities
+              </h3>
+
+              {adminLoading.dashboard ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-4">
+                      <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-3/5 animate-pulse rounded bg-gray-200" />
+                        <div className="h-3 w-2/5 animate-pulse rounded bg-gray-200" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-auto">
+                  {realTimeData.recentTransactions?.map((activity, index) => (
+                    <ActivityCard
+                      key={activity.id || activity._id || index}
+                      {...activity}
+                      user={
+                        typeof activity.user === "object"
+                          ? activity.user?.username ||
+                            activity.user?.email ||
+                            "Unknown User"
+                          : activity.user
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -851,131 +958,6 @@ const Dashboard = () => {
                 )}
               </div>
             </div>
-
-            {/* Real-time Activities */}
-            <div>
-              <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-lg transition-all hover:shadow-xl">
-                <h3
-                  className="mb-6 text-xl font-bold"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  Recent Activities
-                </h3>
-
-                {adminLoading.dashboard ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 w-3/5 animate-pulse rounded bg-gray-200" />
-                          <div className="h-3 w-2/5 animate-pulse rounded bg-gray-200" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="max-h-96 overflow-auto">
-                    {realTimeData.recentTransactions?.map((activity, index) => (
-                      <ActivityCard key={index} {...activity} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Game Management and Transaction Sections */}
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Active Games */}
-
-            {/* Pending Transactions */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg transition-all hover:shadow-xl">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Pending Transactions
-                </h3>
-                <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800">
-                  {pendingTransactions.length} Pending
-                </span>
-              </div>
-
-              {transactionLoading.transactions ? (
-                <div className="space-y-4">
-                  {[1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="h-20 animate-pulse rounded-lg bg-gray-200"
-                    />
-                  ))}
-                </div>
-              ) : pendingTransactions.length > 0 ? (
-                <div className="space-y-4">
-                  {pendingTransactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="rounded-lg border border-gray-200 bg-gray-50 p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500 text-white">
-                            <DollarSign className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {transaction.user} - {transaction.type}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {transaction.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-semibold text-yellow-600">
-                            {transaction.amount}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {transaction.time}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() =>
-                              handleApproveTransaction(transaction.id)
-                            }
-                            disabled={transactionLoading.transactions}
-                            className="rounded-lg bg-green-500 p-2 text-white hover:bg-green-600 disabled:opacity-50"
-                            title="Approve"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleRejectTransaction(transaction.id)
-                            }
-                            disabled={transactionLoading.transactions}
-                            className="rounded-lg bg-red-500 p-2 text-white hover:bg-red-600 disabled:opacity-50"
-                            title="Reject"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center">
-                  <p className="text-gray-600">No pending transactions</p>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Performance Metrics */}
@@ -1032,8 +1014,11 @@ const Dashboard = () => {
               )}
 
               <div className="mt-4 flex flex-wrap justify-center gap-6">
-                {chartData.gameStatsData?.map((entry) => (
-                  <div key={entry.gameType} className="flex items-center gap-2">
+                {chartData.gameStatsData?.map((entry, index) => (
+                  <div
+                    key={entry.gameType || index}
+                    className="flex items-center gap-2"
+                  >
                     <div
                       className="h-3 w-3 rounded-full"
                       style={{

@@ -5,7 +5,7 @@ const API_BASE_URL = API_URL;
 
 // Helper function to get auth token
 const getAuthToken = () => {
-  return localStorage.getItem("adminToken");
+  return localStorage.getItem("token");
 };
 
 // Helper function to create headers with auth token
@@ -124,14 +124,40 @@ const useAdminStore = create((set, get) => ({
       // Calculate dashboard stats
       const totalUsers = users.length;
       const totalGames = games.length;
-      const totalRevenue = transactions
-        .filter((t) => t.type === "DEPOSIT" && t.status === "COMPLETED")
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
-      const pendingWithdrawals = transactions
-        .filter((t) => t.type === "WITHDRAW" && t.status === "PENDING")
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+      // Calculate total deposits (completed)
       const totalDeposits = transactions
         .filter((t) => t.type === "DEPOSIT" && t.status === "COMPLETED")
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+      // Calculate total withdrawals (completed)
+      const totalWithdrawals = transactions
+        .filter((t) => t.type === "WITHDRAW" && t.status === "COMPLETED")
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+      // Calculate platform revenue from game cuts
+      // Get cut percentage from dashboard data or use default 10%
+      const cutPercentage = dashboardData.cutPercentage || 10;
+
+      // Calculate total stakes from completed games
+      const completedGames = games.filter((game) => game.status === "finished");
+      const totalStakes = completedGames.reduce(
+        (sum, game) => sum + (game.stake || 0),
+        0
+      );
+
+      // Calculate platform cut revenue (10% of total stakes from all games)
+      // Each game has 2 players, so total pot is 2 * stake
+      // Platform gets cutPercentage% of the total pot
+      const totalGamePot = totalStakes * 2; // 2 players per game
+      const platformCutRevenue = (totalGamePot * cutPercentage) / 100;
+
+      // Net revenue = platform cut from games + deposits - withdrawals
+      const totalRevenue =
+        platformCutRevenue + totalDeposits - totalWithdrawals;
+
+      const pendingWithdrawals = transactions
+        .filter((t) => t.type === "WITHDRAW" && t.status === "PENDING")
         .reduce((sum, t) => sum + (t.amount || 0), 0);
 
       const stats = {
@@ -141,6 +167,10 @@ const useAdminStore = create((set, get) => ({
         activeUsers: Math.floor(totalUsers * 0.3), // Estimate 30% active users
         pendingWithdrawals,
         totalDeposits,
+        totalWithdrawals,
+        platformCutRevenue,
+        totalStakes,
+        cutPercentage,
       };
 
       console.log("Calculated stats:", stats);

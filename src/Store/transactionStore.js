@@ -5,7 +5,7 @@ const API_BASE_URL = API_URL;
 
 // Helper function to get auth token
 const getAuthToken = () => {
-  return localStorage.getItem("adminToken");
+  return localStorage.getItem("token");
 };
 
 // Helper function to create headers with auth token
@@ -20,11 +20,14 @@ const createAuthHeaders = () => {
 const useTransactionStore = create((set, get) => ({
   // State
   transactions: [],
+  pendingWithdrawals: [],
   loading: {
     transactions: false,
+    pendingWithdrawals: false,
   },
   errors: {
     transactions: null,
+    pendingWithdrawals: null,
   },
 
   // Actions
@@ -63,6 +66,8 @@ const useTransactionStore = create((set, get) => ({
       // Transform the data to match our frontend structure
       const transformedTransactions = data.transactions.map((transaction) => ({
         ...transaction,
+        // Preserve original type for filtering
+        originalType: transaction.type,
         // Map user data correctly
         username: transaction.user?.username || "Unknown User",
         userId: transaction.user?._id || transaction.user,
@@ -192,6 +197,102 @@ const useTransactionStore = create((set, get) => ({
       const transactionDate = new Date(transaction.createdAt);
       return transactionDate >= startDate && transactionDate <= endDate;
     });
+  },
+
+  // Fetch pending withdrawals
+  fetchPendingWithdrawals: async () => {
+    try {
+      get().setLoading("pendingWithdrawals", true);
+      get().clearError("pendingWithdrawals");
+
+      const response = await fetch(
+        `${API_BASE_URL}/wallet/admin/pending-withdrawals`,
+        {
+          method: "GET",
+          headers: createAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Transform the data to match our frontend structure
+      const transformedWithdrawals = data.pendingWithdrawals.map(
+        (transaction) => ({
+          ...transaction,
+          username: transaction.user?.username || "Unknown User",
+          userId: transaction.user?._id || transaction.user,
+          type: "withdrawal",
+          status: "pending",
+          amount: transaction.amount || 0,
+          createdAt: transaction.createdAt || new Date().toISOString(),
+          updatedAt: transaction.updatedAt || new Date().toISOString(),
+          reference: transaction._id,
+          notes: transaction.description || "",
+          method: transaction.withdrawalMethod || "N/A",
+          accountDetails: transaction.accountDetails || "",
+        })
+      );
+
+      set({ pendingWithdrawals: transformedWithdrawals });
+    } catch (error) {
+      console.error("Error fetching pending withdrawals:", error);
+      get().setError("pendingWithdrawals", error.message);
+    } finally {
+      get().setLoading("pendingWithdrawals", false);
+    }
+  },
+
+  // Approve withdrawal
+  approveWithdrawal: async (transactionId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/wallet/admin/withdrawals/${transactionId}/approve`,
+        {
+          method: "PUT",
+          headers: createAuthHeaders(),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Refresh pending withdrawals after approval
+      get().fetchPendingWithdrawals();
+      get().fetchTransactions();
+    } catch (error) {
+      console.error("Error approving withdrawal:", error);
+      throw error;
+    }
+  },
+
+  // Reject withdrawal
+  rejectWithdrawal: async (transactionId, reason = "") => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/wallet/admin/withdrawals/${transactionId}/reject`,
+        {
+          method: "PUT",
+          headers: createAuthHeaders(),
+          body: JSON.stringify({ reason }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Refresh pending withdrawals after rejection
+      get().fetchPendingWithdrawals();
+      get().fetchTransactions();
+    } catch (error) {
+      console.error("Error rejecting withdrawal:", error);
+      throw error;
+    }
   },
 }));
 

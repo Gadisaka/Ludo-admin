@@ -7,8 +7,11 @@ import {
   Receipt,
   Search,
   Filter,
+  Edit,
+  Save,
+  XCircle,
 } from "lucide-react";
-import { useTransactionStore } from "../Store";
+import { useTransactionStore, useBankStore } from "../Store";
 import { API_URL } from "../../constants";
 
 const Transactions = () => {
@@ -27,13 +30,45 @@ const Transactions = () => {
     search: "",
   });
 
-  // Get data from transaction store
+  // Get data from stores
   const { transactions, loading, errors, fetchTransactions } =
     useTransactionStore();
 
+  const {
+    banks,
+    bankForm,
+    editingBank,
+    loading: bankLoading,
+    errors: bankErrors,
+    fetchBanks,
+    updateBankDetails,
+    editBank,
+    cancelEdit,
+    setBankForm,
+  } = useBankStore();
+
   useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions]);
+    fetchBanks();
+  }, [fetchTransactions, fetchBanks]);
+
+  // Handle bank edit
+  const handleEditBank = (bank) => {
+    editBank(bank);
+  };
+
+  // Handle bank save
+  const handleSaveBank = async (bankId) => {
+    const result = await updateBankDetails(bankId, bankForm);
+    if (!result.success) {
+      console.error("Failed to update bank:", result.error);
+    }
+  };
+
+  // Handle bank cancel
+  const handleCancelEdit = () => {
+    cancelEdit();
+  };
 
   const handleRowClick = (transaction) => {
     setSelectedTransaction(transaction);
@@ -46,13 +81,25 @@ const Transactions = () => {
 
   // Filter transactions based on selected criteria
   const filteredTransactions = transactions.filter((transaction) => {
-    // Type filter
-    if (filters.type !== "all" && transaction.type !== filters.type) {
+    // Only show DEPOSIT and WITHDRAW transactions (check original database values)
+    const originalType = transaction.originalType;
+    if (originalType !== "DEPOSIT" && originalType !== "WITHDRAW") {
       return false;
     }
 
-    // Status filter
-    if (filters.status !== "all" && transaction.status !== filters.status) {
+    // Type filter - use the transformed values from the store
+    if (filters.type !== "all") {
+      if (filters.type === "deposit" && transaction.type !== "deposit") {
+        return false;
+      }
+      if (filters.type === "withdrawal" && transaction.type !== "withdrawal") {
+        return false;
+      }
+    }
+
+    // Status filter - normalize case for comparison
+    const normalizedStatus = transaction.status?.toLowerCase();
+    if (filters.status !== "all" && normalizedStatus !== filters.status) {
       return false;
     }
 
@@ -178,6 +225,126 @@ const Transactions = () => {
 
   return (
     <div className="p-6">
+      {/* Bank Management Section */}
+      <div className="mb-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Bank Management
+        </h3>
+
+        {bankErrors.bankAction && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800">{bankErrors.bankAction}</p>
+          </div>
+        )}
+
+        {bankLoading.banks && !banks.length ? (
+          <div className="animate-pulse space-y-3">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {banks.map((bank) => (
+              <div
+                key={bank._id}
+                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+              >
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Bank Name (Constant) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bank Name
+                    </label>
+                    <p className="text-sm text-gray-900 font-medium bg-gray-50 px-3 py-2 rounded-md">
+                      {bank.bankName}
+                    </p>
+                  </div>
+
+                  {/* Bank Number */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bank Number
+                    </label>
+                    {editingBank === bank._id ? (
+                      <input
+                        type="text"
+                        value={bankForm.number}
+                        onChange={(e) =>
+                          setBankForm({ ...bankForm, number: e.target.value })
+                        }
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter bank number"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 font-medium">
+                        {bank.number}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Account Full Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Full Name
+                    </label>
+                    {editingBank === bank._id ? (
+                      <input
+                        type="text"
+                        value={bankForm.accountFullName}
+                        onChange={(e) =>
+                          setBankForm({
+                            ...bankForm,
+                            accountFullName: e.target.value,
+                          })
+                        }
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter account full name"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 font-medium">
+                        {bank.accountFullName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="ml-4 flex space-x-2">
+                  {editingBank === bank._id ? (
+                    <>
+                      <button
+                        onClick={() => handleSaveBank(bank._id)}
+                        disabled={bankLoading.bankAction}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Save className="w-4 h-4 mr-1" />
+                        {bankLoading.bankAction ? "Saving..." : "Save"}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={bankLoading.bankAction}
+                        className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleEditBank(bank)}
+                      className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Filters */}
       <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Filters</h3>
@@ -375,8 +542,7 @@ const Transactions = () => {
                     ) : (
                       <ArrowUp className="w-4 h-4 mr-1" />
                     )}
-                    {transaction.type.charAt(0).toUpperCase() +
-                      transaction.type.slice(1)}
+                    {transaction.type === "deposit" ? "Deposit" : "Withdrawal"}
                   </span>
                 </td>
                 <td
@@ -517,8 +683,9 @@ const Transactions = () => {
                   </div>
                   <div>
                     <h4 className="text-xl font-semibold text-gray-900">
-                      {selectedTransaction.type.charAt(0).toUpperCase() +
-                        selectedTransaction.type.slice(1)}
+                      {selectedTransaction.type === "deposit"
+                        ? "Deposit"
+                        : "Withdrawal"}
                     </h4>
                     <p className="text-sm text-gray-500">
                       {selectedTransaction.reference || selectedTransaction._id}
