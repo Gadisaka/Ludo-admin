@@ -12,7 +12,10 @@ import {
   MdAccountCircle,
   MdSettings,
   MdImage,
+<<<<<<< HEAD
   MdPendingActions,
+=======
+>>>>>>> a16113b1b346b738d99766f44cc34ca241bf659f
 } from "react-icons/md";
 
 const Sidebar = () => {
