@@ -280,6 +280,8 @@ const Dashboard = () => {
   const [telegramStats, setTelegramStats] = useState({
     totalUsers: 0,
     sentCount: 0,
+    totalMessagesSent: 0,
+    recentUsers: [],
   });
 
   // Zustand stores
@@ -410,6 +412,8 @@ const Dashboard = () => {
         setTelegramStats({
           totalUsers: data.totalUsers || 0,
           sentCount: 0, // Will be updated after sending
+          totalMessagesSent: data.totalMessagesSent || 0,
+          recentUsers: data.recentUsers || [],
         });
       }
     } catch (error) {
@@ -432,7 +436,7 @@ const Dashboard = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: notificationMessage.trim(),
+          message: notificationMessage, // Don't trim here to preserve line breaks
           type: notificationType,
         }),
       });
@@ -642,15 +646,19 @@ const Dashboard = () => {
                       <option value="WARNING">Warning</option>
                       <option value="ERROR">Error</option>
                     </select>
-                    <input
-                      type="text"
-                      placeholder="Send notification to all users..."
+                    <textarea
+                      placeholder="Send notification to all users... (supports multi-line)"
                       value={notificationMessage}
                       onChange={(e) => setNotificationMessage(e.target.value)}
-                      className="w-64 rounded border border-gray-300 px-3 py-1 text-sm focus:border-blue-500 focus:outline-none"
+                      className="w-64 rounded border border-gray-300 px-3 py-1 text-sm focus:border-blue-500 focus:outline-none resize-none"
+                      rows="3"
                       disabled={sendingNotification}
                       onKeyPress={(e) => {
-                        if (e.key === "Enter" && !sendingNotification) {
+                        if (
+                          e.key === "Enter" &&
+                          e.ctrlKey &&
+                          !sendingNotification
+                        ) {
                           sendNotificationToAllUsers();
                         }
                       }}
@@ -676,6 +684,8 @@ const Dashboard = () => {
                   <div className="mt-2 text-xs text-gray-600">
                     📱 {telegramStats.totalUsers} Telegram users will also
                     receive this notification
+                    <br />
+                    💡 Use Ctrl+Enter to send, supports multi-line messages
                   </div>
                 )}
               </div>
@@ -778,13 +788,21 @@ const Dashboard = () => {
               loading={adminLoading.dashboard}
             />
 
-            <StatCard
+            {/* <StatCard
               title="Telegram Users"
               value={telegramStats.totalUsers?.toLocaleString() || "0"}
               icon={<Bell className="h-7 w-7" />}
               color="#0088cc"
               loading={false}
             />
+
+            <StatCard
+              title="Messages Sent"
+              value={telegramStats.totalMessagesSent?.toLocaleString() || "0"}
+              icon={<Send className="h-7 w-7" />}
+              color="#10b981"
+              loading={false}
+            /> */}
           </div>
         </div>
 
