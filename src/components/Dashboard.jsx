@@ -277,6 +277,10 @@ const Dashboard = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("INFO");
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [telegramStats, setTelegramStats] = useState({
+    totalUsers: 0,
+    sentCount: 0,
+  });
 
   // Zustand stores
   const {
@@ -397,6 +401,22 @@ const Dashboard = () => {
     }
   };
 
+  // Fetch Telegram stats
+  const fetchTelegramStats = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/stats`);
+      if (response.ok) {
+        const data = await response.json();
+        setTelegramStats({
+          totalUsers: data.totalUsers || 0,
+          sentCount: 0, // Will be updated after sending
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching Telegram stats:", error);
+    }
+  };
+
   // Send notification to all users
   const sendNotificationToAllUsers = async () => {
     if (!notificationMessage.trim()) {
@@ -419,8 +439,22 @@ const Dashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`Notification sent successfully to ${data.userCount} users!`);
+        const telegramResult = data.telegramResult;
+
+        let message = `Notification sent successfully to ${data.userCount} users!`;
+        if (telegramResult) {
+          message += `\n\n📱 Telegram: ${telegramResult.sentCount}/${telegramResult.totalUsers} users reached`;
+          setTelegramStats((prev) => ({
+            ...prev,
+            sentCount: telegramResult.sentCount,
+          }));
+        }
+
+        alert(message);
         setNotificationMessage("");
+
+        // Refresh Telegram stats
+        fetchTelegramStats();
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.message}`);
@@ -443,6 +477,7 @@ const Dashboard = () => {
           fetchGames(),
           fetchTransactions(),
           fetchCutPercentage(),
+          fetchTelegramStats(),
         ]);
       } catch (error) {
         console.error("Failed to initialize dashboard:", error);
@@ -637,6 +672,12 @@ const Dashboard = () => {
                     </button>
                   </div>
                 </div>
+                {telegramStats.totalUsers > 0 && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    📱 {telegramStats.totalUsers} Telegram users will also
+                    receive this notification
+                  </div>
+                )}
               </div>
 
               <button
@@ -735,6 +776,14 @@ const Dashboard = () => {
               icon={<DollarSign className="h-7 w-7" />}
               color="#f59e0b"
               loading={adminLoading.dashboard}
+            />
+
+            <StatCard
+              title="Telegram Users"
+              value={telegramStats.totalUsers?.toLocaleString() || "0"}
+              icon={<Bell className="h-7 w-7" />}
+              color="#0088cc"
+              loading={false}
             />
           </div>
         </div>
