@@ -447,7 +447,7 @@ const Dashboard = () => {
 
         let message = `Notification sent successfully to ${data.userCount} users!`;
         if (telegramResult) {
-          message += `\n\n📱 Telegram: ${telegramResult.sentCount}/${telegramResult.totalUsers} users reached`;
+          message += `\n\n📱 Telegram: ${telegramResult.totalUsers} users reached`;
           setTelegramStats((prev) => ({
             ...prev,
             sentCount: telegramResult.sentCount,
@@ -682,8 +682,6 @@ const Dashboard = () => {
                 </div>
                 {telegramStats.totalUsers > 0 && (
                   <div className="mt-2 text-xs text-gray-600">
-                    📱 {telegramStats.totalUsers} Telegram users will also
-                    receive this notification
                     <br />
                     💡 Use Ctrl+Enter to send, supports multi-line messages
                   </div>
